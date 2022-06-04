@@ -8,7 +8,16 @@
 import UIKit
 
 class ViewController: UITableViewController {
+	
 	var petitions = [Petition]()
+	
+	var urlString: String {
+		if navigationController?.tabBarItem.tag == 0 {
+			return "https://www.hackingwithswift.com/samples/petitions-1.json"
+		} else {
+			return "https://www.hackingwithswift.com/samples/petitions-2.json"
+		}
+	}
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -16,24 +25,32 @@ class ViewController: UITableViewController {
 		title = "Whitehouse Petitions"
 		navigationController?.navigationBar.prefersLargeTitles = true
 		
-		
-		
-		var urlString: String {
-			if navigationController?.tabBarItem.tag == 0 {
-				return "https://www.hackingwithswift.com/samples/petitions-1.json"
-			} else {
-				return "https://www.hackingwithswift.com/samples/petitions-2.json"
-			}
-		}
-		
+		navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Credits", style: .plain, target: self, action: #selector(showCredits))
+
 		do {
 			guard let url = URL(string: urlString) else { fatalError() }
 			let data = try Data(contentsOf: url)
 			parse(json: data)
 		} catch {
-			print("Failed to load data from url: \(urlString)")
+			let title = "Failed to load petitions!"
+			let message = "Check internet connection and try again later."
+			showAlert(withTitle: title, and: message)
 		}
 
+	}
+	
+	@objc func showCredits() {
+		let ac = UIAlertController(title: "Data came from:", message: urlString, preferredStyle: .alert)
+		let action = UIAlertAction(title: "OK", style: .default)
+		ac.addAction(action)
+		present(ac, animated: true)
+	}
+	
+	func showAlert(withTitle: String, and message: String) {
+		let ac = UIAlertController(title: withTitle, message: message, preferredStyle: .alert)
+		let action = UIAlertAction(title: "OK", style: .default)
+		ac.addAction(action)
+		present(ac, animated: true)
 	}
 	
 	func parse(json: Data) {
