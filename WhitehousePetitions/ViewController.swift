@@ -11,6 +11,13 @@ class ViewController: UITableViewController {
 	
 	var petitions = [Petition]()
 	
+	var filteredPetitions: [Petition] {
+		guard let searchText = seachText else { return petitions }
+		return petitions.filter({ $0.title.localizedCaseInsensitiveContains(searchText)})
+	}
+	
+	var seachText: String?
+	
 	var urlString: String {
 		if navigationController?.tabBarItem.tag == 0 {
 			return "https://www.hackingwithswift.com/samples/petitions-1.json"
@@ -28,14 +35,10 @@ class ViewController: UITableViewController {
 		navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Credits", style: .plain, target: self, action: #selector(showCredits))
 		
 		let filterButton = UIBarButtonItem(image: UIImage(systemName: "rectangle.and.text.magnifyingglass"), style: .plain, target: self, action: #selector(filterPetitions))
-		let cancelFiltersButton = UIBarButtonItem(image: UIImage(systemName: "xmark.circle"), style: .plain, target: self, action: #selector(loadData))
+		let cancelFiltersButton = UIBarButtonItem(image: UIImage(systemName: "xmark.circle"), style: .plain, target: self, action: #selector(cancelFilters))
 		
 		navigationItem.leftBarButtonItems = [filterButton, cancelFiltersButton]
 		
-		loadData()
-	}
-	
-	@objc func loadData() {
 		do {
 			guard let url = URL(string: urlString) else { fatalError() }
 			let data = try Data(contentsOf: url)
@@ -47,12 +50,23 @@ class ViewController: UITableViewController {
 		}
 	}
 	
+	func parse(json: Data) {
+		guard let decoded = try? JSONDecoder().decode(Petitions.self, from: json) else { return }
+		petitions = decoded.results
+		tableView.reloadData()
+	}
+	
+	@objc func cancelFilters() {
+		seachText = nil
+		tableView.reloadData()
+	}
+	
 	@objc func filterPetitions() {
 		let ac = UIAlertController(title: "Enter text you wanted to find", message: nil, preferredStyle: .alert)
 		ac.addTextField()
 		let findButton = UIAlertAction(title: "Find", style: .default) { [weak self] _ in
 			if let searchText = ac.textFields?[0].text?.lowercased(), searchText.contains(where: { $0 != " " }) {
-				self?.petitions = self?.petitions.filter({ $0.title.localizedCaseInsensitiveContains(searchText)}) ?? [Petition]()
+				self?.seachText = searchText
 				self?.tableView.reloadData()
 			}
 		}
@@ -75,19 +89,13 @@ class ViewController: UITableViewController {
 		present(ac, animated: true)
 	}
 	
-	func parse(json: Data) {
-		guard let decoded = try? JSONDecoder().decode(Petitions.self, from: json) else { return }
-		petitions = decoded.results
-		tableView.reloadData()
-	}
-	
 	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		return petitions.count
+		return filteredPetitions.count
 	}
 	
 	override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-		let petition = petitions[indexPath.row]
+		let petition = filteredPetitions[indexPath.row]
 		cell.textLabel?.text = petition.title
 		cell.detailTextLabel?.text = petition.body
 		return cell
@@ -95,7 +103,7 @@ class ViewController: UITableViewController {
 	
 	override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		let vc = DetailViewController()
-		let petiton = petitions[indexPath.row]
+		let petiton = filteredPetitions[indexPath.row]
 		vc.detailItem = petiton
 		navigationController?.pushViewController(vc, animated: true)
 		
