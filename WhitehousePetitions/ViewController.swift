@@ -16,7 +16,15 @@ class ViewController: UITableViewController {
 		title = "Whitehouse Petitions"
 		navigationController?.navigationBar.prefersLargeTitles = true
 		
-		let urlString = "https://www.hackingwithswift.com/samples/petitions-1.json"
+		
+		
+		var urlString: String {
+			if navigationController?.tabBarItem.tag == 0 {
+				return "https://www.hackingwithswift.com/samples/petitions-1.json"
+			} else {
+				return "https://www.hackingwithswift.com/samples/petitions-2.json"
+			}
+		}
 		
 		do {
 			guard let url = URL(string: urlString) else { fatalError() }
